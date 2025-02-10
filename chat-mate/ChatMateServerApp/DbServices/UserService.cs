@@ -3,66 +3,89 @@ using ChatMateServerApp.DbServices.Interfaces;
 using ChatMateServerApp.Dtos;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using ChatMateServerApp.Data;
+using Newtonsoft.Json;
+using System.Collections.ObjectModel;
+using AutoMapper;
 
 namespace ChatMateServerApp.DbServices
 {
     public class UserService : IUserService
     {
-    private readonly ChatMateContext _context;
+        private readonly ChatMateContext _context;
+        private readonly IMapper _mapper;
 
-    public UserService(ChatMateContext context)
-    {
-        _context = context;
-    }
-
-    public async Task<User> RegisterUserAsync(UserRegistrationDto userDto)
-    {
-        var user = new User
+        public UserService(ChatMateContext context, IMapper mapper)
         {
-            FirstName = userDto.FirstName,
-            LastName = userDto.LastName,
-            UserName = userDto.UserName,
-            PhoneNumber = userDto.PhoneNumber
-        };
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
-        return user;
-    }
-
-    public async Task<User> AuthenticateUserAsync(UserLoginDto loginDto)
-    {
-        return await _context.Users
-            .FirstOrDefaultAsync(u => u.UserName == loginDto.UserName && u.PhoneNumber == loginDto.PhoneNumber);
-    }
-
-    public async Task<User> GetUserProfileAsync(int userId)
-    {
-        return await _context.Users.FindAsync(userId);
-    }
-
-    public async Task UpdateUserProfileAsync(int userId, UserProfileDto profileDto)
-    {
-        var user = await _context.Users.FindAsync(userId);
-        if (user != null)
-        {
-            user.FirstName = profileDto.FirstName;
-            user.LastName = profileDto.LastName;
-            user.UserName = profileDto.UserName;
-            user.ProfilePictureUrl = profileDto.ProfilePictureUrl;
-            await _context.SaveChangesAsync();
+            _context = context;
+            _mapper = mapper;
         }
-    }
 
-    public async Task UploadProfilePictureAsync(int userId, string profilePictureUrl)
-    {
-        var user = await _context.Users.FindAsync(userId);
-        if (user != null)
+        public RequestResponse RegisterUser(UserRegistrationDto userDto)
         {
+            var user = new User
+            {
+                UserId = 0,
+                FirstName = userDto.FirstName,
+                LastName = userDto.LastName,
+                UserName = userDto.UserName,
+                PhoneNumber = userDto.PhoneNumber,
+                Groups = null!,
+                StatusUpdates = null!,
+                ProfilePictureUrl = "https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50?s=200",
+                MessagesReceived = null!,
+                MessagesSent = null!,
 
-                user.ProfilePictureUrl = profilePictureUrl;
-                await _context.SaveChangesAsync();
+            };
+            _context.Users.Add(user);
+            _context.SaveChanges();
+            return new RequestResponse { Data = JsonConvert.SerializeObject(user), Success = true };
+        }
+
+        public RequestResponse AuthenticateUser(UserLoginDto loginDto)
+        {
+            var user = _context.Users
+                .FirstOrDefault(u => u.UserName == loginDto.UserName && u.PhoneNumber == loginDto.PhoneNumber);
+            return new RequestResponse { Data = JsonConvert.SerializeObject(user), Success = user != null };
+        }
+
+        public RequestResponse GetUserProfile(int userId)
+        {
+            var user = _context.Users.Find(userId);
+            return new RequestResponse { Data = JsonConvert.SerializeObject(user), Success = user != null };
+        }
+
+        public ObservableCollection<UserProfileDto> GetUserProfiles()
+        {
+            var users = _context.Users;
+            return _mapper.Map<ObservableCollection<UserProfileDto>>(users);
+        }
+
+        public RequestResponse UpdateUserProfile(int userId, UserProfileDto profileDto)
+        {
+            var user = _context.Users.Find(userId);
+            if (user != null)
+            {
+                user.FirstName = profileDto.FirstName;
+                user.LastName = profileDto.LastName;
+                user.UserName = profileDto.UserName;
+                user.ProfilePictureUrl = profileDto.ProfilePictureUrl;
+                _context.SaveChanges();
+                return new RequestResponse { Success = true };
             }
+            return new RequestResponse { Success = false, Message = "User not found" };
+        }
+
+        public RequestResponse UploadProfilePicture(int userId, string profilePictureUrl)
+        {
+            var user = _context.Users.Find(userId);
+            if (user != null)
+            {
+                user.ProfilePictureUrl = profilePictureUrl;
+                _context.SaveChanges();
+                return new RequestResponse { Success = true };
+            }
+            return new RequestResponse { Success = false, Message = "User not found" };
         }
     }
 }

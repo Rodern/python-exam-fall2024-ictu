@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace ChatMateServerApp.DbModels
 {
+    [PrimaryKey("UserId")]
     public class User
     {
         public int UserId { get; set; }

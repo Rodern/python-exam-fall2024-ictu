@@ -1,0 +1,241 @@
+import sqlite3
+from datetime import datetime
+
+# Connect to SQLite database
+conn = sqlite3.connect('database.db')
+cursor = conn.cursor()
+
+# Enable foreign key support
+cursor.execute('PRAGMA foreign_keys = ON;')
+
+# Create tables
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS address (
+  addressId INTEGER PRIMARY KEY AUTOINCREMENT,
+  cityId INTEGER NOT NULL,
+  regionId INTEGER NOT NULL,
+  countyId INTEGER NOT NULL,
+  street_one TEXT NOT NULL,
+  street_two TEXT NOT NULL,
+  FOREIGN KEY (cityId) REFERENCES city(cityId) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (regionId) REFERENCES region(regionId) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (countyId) REFERENCES country(countryId) ON DELETE CASCADE ON UPDATE CASCADE
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS budget (
+  budgetId INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId TEXT NOT NULL,
+  name TEXT NOT NULL,
+  total_amount REAL NOT NULL,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  date_created TEXT NOT NULL,
+  last_modified TEXT NOT NULL,
+  FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE ON UPDATE CASCADE
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS category (
+  categoryId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS city (
+  cityId INTEGER PRIMARY KEY AUTOINCREMENT,
+  countryId INTEGER NOT NULL,
+  guid TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  latitude REAL NOT NULL,
+  longitude REAL NOT NULL,
+  FOREIGN KEY (countryId) REFERENCES country(countryId) ON DELETE CASCADE ON UPDATE CASCADE
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS country (
+  countryId INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  code TEXT NOT NULL,
+  dial_code INTEGER NOT NULL,
+  symbol TEXT NOT NULL,
+  capital TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  continent TEXT NOT NULL,
+  continent_code TEXT NOT NULL,
+  alpha_3 TEXT NOT NULL
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS financial_goal (
+  goalId INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId TEXT NOT NULL,
+  name TEXT NOT NULL,
+  target_amount REAL NOT NULL,
+  current_amount REAL NOT NULL,
+  start_date TEXT NOT NULL,
+  end_date TEXT NOT NULL,
+  date_created TEXT NOT NULL,
+  last_modified TEXT NOT NULL,
+  FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE ON UPDATE CASCADE
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS income (
+  incomeId INTEGER PRIMARY KEY AUTOINCREMENT,
+  userId TEXT NOT NULL,
+  source TEXT NOT NULL,
+  amount REAL NOT NULL,
+  date_added TEXT NOT NULL,
+  FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE ON UPDATE CASCADE
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS inventory_item (
+  itemId TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  categoryId INTEGER,
+  manufacturerId INTEGER,
+  name TEXT NOT NULL,
+  value REAL NOT NULL,
+  item_count INTEGER NOT NULL,
+  description TEXT NOT NULL,
+  purchase_date TEXT NOT NULL,
+  date_manufactured TEXT NOT NULL,
+  expiry_date TEXT NOT NULL,
+  warranty INTEGER NOT NULL,
+  barcode TEXT NOT NULL UNIQUE,
+  date_created TEXT NOT NULL,
+  last_modified TEXT NOT NULL,
+  FOREIGN KEY (categoryId) REFERENCES category(categoryId) ON DELETE SET NULL ON UPDATE CASCADE,
+  FOREIGN KEY (userId) REFERENCES user(userId) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (manufacturerId) REFERENCES manufacturer(manufacturerId) ON DELETE SET NULL ON UPDATE CASCADE
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS manufacturer (
+  manufacturerId INTEGER PRIMARY KEY AUTOINCREMENT,
+  addressId INTEGER,
+  name TEXT NOT NULL,
+  logo_url TEXT NOT NULL,
+  website TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone_number TEXT NOT NULL,
+  date_created TEXT NOT NULL,
+  last_modified TEXT NOT NULL,
+  FOREIGN KEY (addressId) REFERENCES address(addressId) ON DELETE SET NULL ON UPDATE CASCADE
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS region (
+  regionId INTEGER PRIMARY KEY AUTOINCREMENT,
+  countryId INTEGER NOT NULL,
+  guid TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  short_code TEXT NOT NULL,
+  capital_city INTEGER NOT NULL,
+  latitude TEXT NOT NULL,
+  longitude TEXT NOT NULL,
+  FOREIGN KEY (countryId) REFERENCES country(countryId) ON DELETE CASCADE ON UPDATE CASCADE
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS user (
+  userId TEXT PRIMARY KEY,
+  username TEXT NOT NULL UNIQUE,
+  password TEXT NOT NULL,
+  email TEXT NOT NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  phone_number TEXT NOT NULL,
+  role TEXT NOT NULL,
+  date_created TEXT NOT NULL,
+  last_modified TEXT NOT NULL
+)
+""")
+
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS wallet (
+  walletId INTEGER PRIMARY KEY AUTOINCREMENT,
+  amount REAL NOT NULL,
+  date_created TEXT NOT NULL,
+  last_modified TEXT NOT NULL
+)
+""")
+
+# Commit changes
+conn.commit()
+
+# CRUD operations
+def create_record(table, data):
+    placeholders = ', '.join(['?'] * len(data))
+    columns = ', '.join(data.keys())
+    sql = f'INSERT INTO {table} ({columns}) VALUES ({placeholders})'
+    cursor.execute(sql, list(data.values()))
+    conn.commit()
+
+def read_record(table, condition):
+    sql = f'SELECT * FROM {table} WHERE {condition}'
+    cursor.execute(sql)
+    return cursor.fetchall()
+
+def update_record(table, updates, condition):
+    set_clause = ', '.join([f'{k} = ?' for k in updates.keys()])
+    sql = f'UPDATE {table} SET {set_clause} WHERE {condition}'
+    cursor.execute(sql, list(updates.values()))
+    conn.commit()
+
+def delete_record(table, condition):
+    sql = f'DELETE FROM {table} WHERE {condition}'
+    cursor.execute(sql)
+    conn.commit()
+
+""" # Example usage
+create_record('user', {
+    'userId': '1',
+    'username': 'john_doe',
+    'password': 'securepassword',
+    'email': 'john@example.com',
+    'first_name': 'John',
+    'last_name': 'Doe',
+    'phone_number': '123456789',
+    'role': 'Father',
+    'date_created': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    'last_modified': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+})
+
+# Example usage
+create_record('user', {
+    'userId': '2',
+    'username': 'jane_doe',
+    'password': 'securepassword',
+    'email': 'jane@example.com',
+    'first_name': 'Jane',
+    'last_name': 'Doe',
+    'phone_number': '123456789',
+    'role': 'Father',
+    'date_created': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    'last_modified': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+})
+
+users = read_record('user', '"1"') #'userId = "1"')
+print(users)
+
+update_record('user', {'email': 'john.doe@example.com'}, 'userId = "1"')
+ 
+#delete_record('user', 'userId = "1"')
+
+print(users)"""
+# Close connection
+#conn.close()

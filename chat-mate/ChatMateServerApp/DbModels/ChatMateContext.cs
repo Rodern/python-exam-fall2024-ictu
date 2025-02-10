@@ -6,6 +6,12 @@ namespace ChatMateServerApp.DbModels
 {
     public class ChatMateContext : DbContext
     {
+
+        public ChatMateContext(DbContextOptions<ChatMateContext> options)
+            : base(options)
+        {
+        }
+
         public DbSet<User> Users { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Status> StatusUpdates { get; set; }
@@ -13,7 +19,7 @@ namespace ChatMateServerApp.DbModels
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=chatmate.db");
+            if(!optionsBuilder.IsConfigured) optionsBuilder.UseSqlite("Data Source=chatmate.db");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -3,7 +3,9 @@ using ChatMateServerApp.DbServices.Interfaces;
 using ChatMateServerApp.Dtos;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using ChatMateServerApp.Data;
+using System.Collections.ObjectModel;
+using Newtonsoft.Json;
 
 namespace ChatMateServerApp.DbServices
 {
@@ -16,7 +18,7 @@ namespace ChatMateServerApp.DbServices
             _context = context;
         }
 
-        public async Task<Status> PostStatusAsync(StatusDto statusDto)
+        public RequestResponse PostStatus(StatusDto statusDto)
         {
             var status = new Status
             {
@@ -26,25 +28,28 @@ namespace ChatMateServerApp.DbServices
                 UserId = statusDto.UserId
             };
             _context.StatusUpdates.Add(status);
-            await _context.SaveChangesAsync();
-            return status;
+            _context.SaveChanges();
+            return new RequestResponse { Data = JsonConvert.SerializeObject(status), Success = true };
         }
 
-        public async Task<IEnumerable<Status>> GetStatusUpdatesAsync(int userId)
+        public ObservableCollection<Status> GetStatusUpdates(int userId)
         {
-            return await _context.StatusUpdates
+            var statuses = _context.StatusUpdates
                 .Where(s => s.UserId == userId)
-                .ToListAsync();
+                .ToList();
+            return new ObservableCollection<Status>(statuses);
         }
 
-        public async Task DeleteStatusAsync(int statusId)
+        public RequestResponse DeleteStatus(int statusId)
         {
-            var status = await _context.StatusUpdates.FindAsync(statusId);
+            var status = _context.StatusUpdates.Find(statusId);
             if (status != null)
             {
                 _context.StatusUpdates.Remove(status);
-                await _context.SaveChangesAsync();
+                _context.SaveChanges();
+                return new RequestResponse { Success = true };
             }
+            return new RequestResponse { Success = false, Message = "Status not found" };
         }
     }
 }

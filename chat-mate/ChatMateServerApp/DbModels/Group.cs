@@ -1,5 +1,8 @@
-﻿namespace ChatMateServerApp.DbModels
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace ChatMateServerApp.DbModels
 {
+    [PrimaryKey("GroupId")]
     public class Group
     {
         public int GroupId { get; set; }

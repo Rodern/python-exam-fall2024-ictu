@@ -1,15 +1,18 @@
 using ChatMateServerApp.DbModels;
 using ChatMateServerApp.Dtos;
+using ChatMateServerApp.Data;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace ChatMateServerApp.DbServices.Interfaces
 {
     public interface IUserService
     {
-        Task<User> RegisterUserAsync(UserRegistrationDto userDto);
-        Task<User> AuthenticateUserAsync(UserLoginDto loginDto);
-        Task<User> GetUserProfileAsync(int userId);
-        Task UpdateUserProfileAsync(int userId, UserProfileDto profileDto);
-        Task UploadProfilePictureAsync(int userId, string profilePictureUrl);
+        RequestResponse RegisterUser(UserRegistrationDto userDto);
+        RequestResponse AuthenticateUser(UserLoginDto loginDto);
+        RequestResponse GetUserProfile(int userId);
+        RequestResponse UpdateUserProfile(int userId, UserProfileDto profileDto);
+        RequestResponse UploadProfilePicture(int userId, string profilePictureUrl);
+        ObservableCollection<UserProfileDto> GetUserProfiles();
     }
 }

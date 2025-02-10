@@ -1,4 +1,5 @@
 ﻿using ChatMateServerApp.Dtos;
+using ChatMateServerApp.DbServices.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,47 +9,68 @@ namespace ChatMateServerApp.Controllers
     [Route("api/users")]
     public class UsersController : ControllerBase
     {
+        private readonly IUserService _userService;
+
+        public UsersController(IUserService userService)
+        {
+            _userService = userService;
+        }
+
         // POST: api/users/register
         [HttpPost("register")]
         public IActionResult Register([FromBody] UserRegistrationDto registrationDto)
         {
-            // Registration logic here
-            return Ok();
+            var result = _userService.RegisterUser(registrationDto);
+            return Ok(result);
         }
 
         // POST: api/users/login
         [HttpPost("login")]
         public IActionResult Login([FromBody] UserLoginDto loginDto)
         {
-            // Authentication logic here
-            return Ok();
+            var token = _userService.AuthenticateUser(loginDto);
+            if (token != null)
+            {
+                return Ok(new { Token = token });
+            }
+            return Unauthorized();
         }
 
         // GET: api/users/profile
         [HttpGet("profile")]
-        [Authorize]
-        public IActionResult GetProfile()
+        //[Authorize]
+        public IActionResult GetProfile(int userId)
         {
-            // Retrieve user profile logic here
-            return Ok();
+            var profile = _userService.GetUserProfile(userId);
+            return Ok(profile);
+        }
+
+        // GET: api/users/profiles
+        [HttpGet("profiles")]
+        //[Authorize]
+        public IActionResult GetProfiles()
+        {
+            var profile = _userService.GetUserProfiles();
+            return Ok(profile);
         }
 
         // PUT: api/users/profile
         [HttpPut("profile")]
-        [Authorize]
-        public IActionResult UpdateProfile([FromBody] UserProfileDto profileDto)
+        //[Authorize]
+        public IActionResult UpdateProfile(int userId, [FromBody] UserProfileDto profileDto)
         {
-            // Update user profile logic here
-            return Ok();
+            var result = _userService.UpdateUserProfile(userId, profileDto);
+            return Ok(result);
         }
 
-        // PUT: api/users/profile-picture
+        /*// PUT: api/users/profile-picture
         [HttpPut("profile-picture")]
         [Authorize]
-        public IActionResult UploadProfilePicture([FromForm] IFormFile profilePicture)
+        public IActionResult UploadProfilePicture(IFormFile profilePicture)
         {
-            // Upload and set profile picture logic here
-            return Ok();
-        }
+            var userId = User.Identity.Name;
+            var result = _userService.UploadProfilePicture(userId, profilePicture);
+            return Ok(result);
+        }*/
     }
 }

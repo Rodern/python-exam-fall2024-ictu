@@ -3,7 +3,9 @@ using ChatMateServerApp.DbServices.Interfaces;
 using ChatMateServerApp.Dtos;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using ChatMateServerApp.Data;
+using System.Collections.ObjectModel;
+using Newtonsoft.Json;
 
 namespace ChatMateServerApp.DbServices
 {
@@ -16,7 +18,7 @@ namespace ChatMateServerApp.DbServices
             _context = context;
         }
 
-        public async Task<Message> SendMessageAsync(MessageDto messageDto)
+        public RequestResponse SendMessage(MessageDto messageDto)
         {
             var message = new Message
             {
@@ -27,18 +29,19 @@ namespace ChatMateServerApp.DbServices
                 GroupId = messageDto.GroupId
             };
             _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
-            return message;
+            _context.SaveChanges();
+            return new RequestResponse { Data = JsonConvert.SerializeObject(message), Success = true };
         }
 
-        public async Task<IEnumerable<Message>> GetMessagesAsync(int conversationId)
+        public ObservableCollection<Message> GetMessages(int conversationId)
         {
-            return await _context.Messages
+            var messages = _context.Messages
                 .Where(m => m.ReceiverId == conversationId || m.GroupId == conversationId)
-                .ToListAsync();
+                .ToList();
+            return  new ObservableCollection<Message>(messages);
         }
 
-        public async Task SendMediaAsync(int conversationId, string mediaUrl)
+        public RequestResponse SendMedia(int conversationId, string mediaUrl)
         {
             var message = new Message
             {
@@ -47,7 +50,8 @@ namespace ChatMateServerApp.DbServices
                 ReceiverId = conversationId
             };
             _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+            return new RequestResponse { Success = true };
         }
     }
 }

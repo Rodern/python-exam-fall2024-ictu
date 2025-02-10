@@ -1,5 +1,8 @@
-﻿namespace ChatMateServerApp.DbModels
+﻿using Microsoft.EntityFrameworkCore;
+
+namespace ChatMateServerApp.DbModels
 {
+    [PrimaryKey("StatusId")]
     public class Status
     {
         public int StatusId { get; set; }

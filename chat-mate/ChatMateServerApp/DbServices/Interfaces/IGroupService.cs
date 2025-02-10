@@ -1,16 +1,17 @@
 using ChatMateServerApp.DbModels;
 using ChatMateServerApp.Dtos;
 using System.Collections.Generic;
+using ChatMateServerApp.Data;
 
 namespace ChatMateServerApp.DbServices.Interfaces
 {
     public interface IGroupService
     {
-        Task<Group> CreateGroupAsync(GroupDto groupDto);
-        Task<Group> GetGroupAsync(int groupId);
-        Task UpdateGroupAsync(int groupId, GroupDto groupDto);
-        Task DeleteGroupAsync(int groupId);
-        Task AddMemberAsync(int groupId, int userId);
-        Task RemoveMemberAsync(int groupId, int userId);
+        RequestResponse CreateGroup(GroupDto groupDto);
+        RequestResponse GetGroup(int groupId);
+        RequestResponse UpdateGroup(int groupId, GroupDto groupDto);
+        RequestResponse DeleteGroup(int groupId);
+        RequestResponse AddMember(int groupId, int userId);
+        RequestResponse RemoveMember(int groupId, int userId);
     }
 }

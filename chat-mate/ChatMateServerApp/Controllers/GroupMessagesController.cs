@@ -1,6 +1,8 @@
 ﻿using ChatMateServerApp.Dtos;
+using ChatMateServerApp.DbServices.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace ChatMateServerApp.Controllers
 {
@@ -8,31 +10,38 @@ namespace ChatMateServerApp.Controllers
     [Route("api/groups/{groupId}/messages")]
     public class GroupMessagesController : ControllerBase
     {
+        private readonly IMessageService _messageService;
+
+        public GroupMessagesController(IMessageService messageService)
+        {
+            _messageService = messageService;
+        }
+
         // POST: api/groups/{groupId}/messages
         [HttpPost]
         [Authorize]
-        public IActionResult SendMessage(Guid groupId, [FromBody] MessageDto messageDto)
+        public IActionResult SendMessage(int groupId, [FromBody] MessageDto messageDto)
         {
-            // Send group message logic here
-            return Ok();
+            var result = _messageService.SendMessage(messageDto);
+            return Ok(result);
         }
 
         // GET: api/groups/{groupId}/messages
         [HttpGet]
         [Authorize]
-        public IActionResult GetMessages(Guid groupId)
+        public IActionResult GetMessages(int groupId)
         {
-            // Retrieve group messages logic here
-            return Ok();
+            var messages = _messageService.GetMessages(groupId);
+            return Ok(messages);
         }
 
-        // POST: api/groups/{groupId}/messages/media
+        /*// POST: api/groups/{groupId}/messages/media
         [HttpPost("media")]
         [Authorize]
-        public IActionResult SendMedia(Guid groupId, [FromForm] IFormFile mediaFile)
+        public IActionResult SendMedia(Guid groupId, IFormFile mediaFile)
         {
-            // Send group media file logic here
-            return Ok();
-        }
+            var result = _messageService.SendMedia(groupId, mediaFile);
+            return Ok(result);
+        }*/
     }
 }

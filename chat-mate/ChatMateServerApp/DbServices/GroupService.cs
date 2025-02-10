@@ -2,8 +2,8 @@ using ChatMateServerApp.DbModels;
 using ChatMateServerApp.DbServices.Interfaces;
 using ChatMateServerApp.Dtos;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using ChatMateServerApp.Data;
+using Newtonsoft.Json;
 
 namespace ChatMateServerApp.DbServices
 {
@@ -16,7 +16,7 @@ namespace ChatMateServerApp.DbServices
             _context = context;
         }
 
-        public async Task<Group> CreateGroupAsync(GroupDto groupDto)
+        public RequestResponse CreateGroup(GroupDto groupDto)
         {
             var group = new Group
             {
@@ -27,65 +27,70 @@ namespace ChatMateServerApp.DbServices
             };
 
             _context.Groups.Add(group);
-            await _context.SaveChangesAsync();
-            return group;
+            _context.SaveChanges();
+            return new RequestResponse { Data = JsonConvert.SerializeObject(group), Success = true };
         }
 
-        public async Task<Group> GetGroupAsync(int groupId)
+        public RequestResponse GetGroup(int groupId)
         {
-            return await _context.Groups
+            var group = _context.Groups
                 .Include(g => g.Members)
-                .FirstOrDefaultAsync(g => g.GroupId == groupId);
+                .FirstOrDefault(g => g.GroupId == groupId);
+            return new RequestResponse { Data = JsonConvert.SerializeObject(group), Success = group != null };
         }
 
-        public async Task UpdateGroupAsync(int groupId, GroupDto groupDto)
+        public RequestResponse UpdateGroup(int groupId, GroupDto groupDto)
         {
-            var group = await _context.Groups.FindAsync(groupId);
-            if (group == null) throw new Exception("Group not found");
+            var group = _context.Groups.Find(groupId);
+            if (group == null) return new RequestResponse { Success = false, Message = "Group not found" };
 
             group.Name = groupDto.Name;
             group.Description = groupDto.Description;
             group.GroupPictureUrl = groupDto.GroupPictureUrl;
 
             _context.Groups.Update(group);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+            return new RequestResponse { Success = true };
         }
 
-        public async Task DeleteGroupAsync(int groupId)
+        public RequestResponse DeleteGroup(int groupId)
         {
-            var group = await _context.Groups.FindAsync(groupId);
-            if (group == null) throw new Exception("Group not found");
+            var group = _context.Groups.Find(groupId);
+            if (group == null) return new RequestResponse { Success = false, Message = "Group not found" };
 
             _context.Groups.Remove(group);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+            return new RequestResponse { Success = true };
         }
 
-        public async Task AddMemberAsync(int groupId, int userId)
+        public RequestResponse AddMember(int groupId, int userId)
         {
-            var group = await _context.Groups
+            var group = _context.Groups
                 .Include(g => g.Members)
-                .FirstOrDefaultAsync(g => g.GroupId == groupId);
-            if (group == null) throw new Exception("Group not found");
+                .FirstOrDefault(g => g.GroupId == groupId);
+            if (group == null) return new RequestResponse { Success = false, Message = "Group not found" };
 
-            var user = await _context.Users.FindAsync(userId);
-            if (user == null) throw new Exception("User not found");
+            var user = _context.Users.Find(userId);
+            if (user == null) return new RequestResponse { Success = false, Message = "User not found" };
 
             group.Members.Add(user);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+            return new RequestResponse { Success = true };
         }
 
-        public async Task RemoveMemberAsync(int groupId, int userId)
+        public RequestResponse RemoveMember(int groupId, int userId)
         {
-            var group = await _context.Groups
+            var group = _context.Groups
                 .Include(g => g.Members)
-                .FirstOrDefaultAsync(g => g.GroupId == groupId);
-            if (group == null) throw new Exception("Group not found");
+                .FirstOrDefault(g => g.GroupId == groupId);
+            if (group == null) return new RequestResponse { Success = false, Message = "Group not found" };
 
             var user = group.Members.FirstOrDefault(m => m.UserId == userId);
-            if (user == null) throw new Exception("User not found in group");
+            if (user == null) return new RequestResponse { Success = false, Message = "User not found in group" };
 
             group.Members.Remove(user);
-            await _context.SaveChangesAsync();
+            _context.SaveChanges();
+            return new RequestResponse { Success = true };
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ChatMateServerApp.Dtos;
+using ChatMateServerApp.DbServices.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,31 +9,38 @@ namespace ChatMateServerApp.Controllers
     [Route("api/messages")]
     public class MessagesController : ControllerBase
     {
+        private readonly IMessageService _messageService;
+
+        public MessagesController(IMessageService messageService)
+        {
+            _messageService = messageService;
+        }
+
         // POST: api/messages/send
         [HttpPost("send")]
-        [Authorize]
+        //[Authorize]
         public IActionResult SendMessage([FromBody] MessageDto messageDto)
         {
-            // Send message logic here
-            return Ok();
+            var result = _messageService.SendMessage(messageDto);
+            return Ok(result);
         }
 
         // GET: api/messages/{conversationId}
         [HttpGet("{conversationId}")]
-        [Authorize]
-        public IActionResult GetMessages(Guid conversationId)
+        //[Authorize]
+        public IActionResult GetMessages(int conversationId)
         {
-            // Retrieve messages logic here
-            return Ok();
+            var messages = _messageService.GetMessages(conversationId);
+            return Ok(messages);
         }
 
-        // POST: api/messages/{conversationId}/media
+        /*// POST: api/messages/{conversationId}/media
         [HttpPost("{conversationId}/media")]
         [Authorize]
-        public IActionResult SendMedia(Guid conversationId, [FromForm] IFormFile mediaFile)
+        public IActionResult SendMedia(int conversationId, IFormFile mediaFile)
         {
-            // Send media file logic here
-            return Ok();
-        }
+            var result = _messageService.SendMedia(conversationId, mediaFile);
+            return Ok(result);
+        }*/
     }
 }

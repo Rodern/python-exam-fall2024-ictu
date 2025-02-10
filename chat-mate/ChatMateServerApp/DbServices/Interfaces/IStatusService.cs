@@ -1,13 +1,15 @@
 using ChatMateServerApp.DbModels;
 using ChatMateServerApp.Dtos;
 using System.Collections.Generic;
+using ChatMateServerApp.Data;
+using System.Collections.ObjectModel;
 
 namespace ChatMateServerApp.DbServices.Interfaces
 {
     public interface IStatusService
     {
-        Task<Status> PostStatusAsync(StatusDto statusDto);
-        Task<IEnumerable<Status>> GetStatusUpdatesAsync(int userId);
-        Task DeleteStatusAsync(int statusId);
+        RequestResponse PostStatus(StatusDto statusDto);
+        ObservableCollection<Status> GetStatusUpdates(int userId);
+        RequestResponse DeleteStatus(int statusId);
     }
 }
