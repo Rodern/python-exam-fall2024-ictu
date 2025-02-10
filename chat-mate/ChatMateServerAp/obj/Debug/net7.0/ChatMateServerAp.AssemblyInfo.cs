@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ChatMateServerAp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+52cf36d96f7180121ea326b15c2b67430996dd05")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+38c670e25effcb05e7db12520251432516b2a2e4")]
 [assembly: System.Reflection.AssemblyProductAttribute("ChatMateServerAp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ChatMateServerAp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
