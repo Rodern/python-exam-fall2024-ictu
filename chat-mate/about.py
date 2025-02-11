@@ -1,31 +1,5 @@
-""" 
 import flet as ft
 from flet import *
-
-def About(page: Page):
-    content = ft.Container(
-        [
-            ft.Container(
-                [
-                    ft.Text(
-                        value="About",
-                        size=24,
-                        weight=ft.FontWeight.BOLD,
-                        color=ft.Colors.with_opacity(1, "#1f1f1f"),
-                        text_align=ft.TextAlign.CENTER
-                    )
-                ]
-            )
-        ],
-        width= 710,
-        bgcolor=ft.Colors.WHITE,
-        expand=True,
-    )
-    return content """
-
-import flet as ft
-from flet import *
-from db.inventoryplusdb import *
 from helpers.datahelpers import *
 from hashlib import sha256
 
@@ -35,7 +9,15 @@ def About(page: ft.Page):
         content=ft.Column(
             [
                 ft.Row(
-                    [ft.Text("About STACK", size=32, color=ft.Colors.with_opacity(1, "#1f1f1f"))],
+                    [
+                        ft.Image(
+                            src=r"C:\Users\Rodern\git-repos\python-exam-fall2024-ictu\chat-mate\assets\chatmate-logo+text-square.png",  # Replace with your app logo URL
+                            width=150,
+                            height=150,
+                        ),
+                        ft.Text("About ChatMate", size=32, color=ft.Colors.with_opacity(1, "#1f1f1f"))
+                    ],
+                    spacing=20,
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
             ],

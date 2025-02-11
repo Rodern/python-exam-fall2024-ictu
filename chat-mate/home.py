@@ -1,206 +1,124 @@
 import flet as ft
 from datetime import datetime
+from db.crud import get_user, session
+from db.models import User, Message
+from helpers.datahelpers import *
 
 def Home(page: ft.Page):
-    page.title = "STACK - Inventory and Finance Management"
-    # page.window.width = 900
-    # page.window.height = 700
-    page.bgcolor = "#000E2F"
+    page.title = "ChatMate - Instant Messaging"
+    page.bgcolor = "#FFFFFF"
+
+    GetLogin(page)
 
     # Header section
     header = ft.Row(
         [
             ft.Image(
-                src=r"assets/favicon.png",  # Replace with your app logo URL
-                width=80,
-                height=80,
+                src=r"C:\Users\Rodern\git-repos\python-exam-fall2024-ictu\chat-mate\assets\ictu-logo.png",  # Replace with your app logo URL
+                width=40,
+                height=40,
+                visible=False,
             ),
-            ft.Column(
-                [
-                    ft.Text("STACK", size=24, weight=ft.FontWeight.BOLD),
-                    ft.Text("Where Smart Management Meets Simplicity", size=16),
-                ],
-                spacing=5,
-                alignment=ft.MainAxisAlignment.START,
-            ),
+            ft.Text("Chats", size=24, weight=ft.FontWeight.BOLD, color=ft.Colors.with_opacity(1, "#009c74")),
         ],
-        spacing=0,
         alignment=ft.MainAxisAlignment.START,
+        spacing=10,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
     )
 
-    # Tab content containers
-    finances_container = ft.Column(
+    # Function to get the last message from a sender to the current user
+    def get_last_message(user_id, sender_id):
+        message = session.query(Message).filter(
+            (Message.sender_id == sender_id) & (Message.receiver_id == user_id)
+        ).order_by(Message.timestamp.desc()).first()
+        return message
+
+    # Function to get chat list
+    def get_chat_list(user_id):
+        messages = session.query(Message).filter(Message.receiver_id == user_id).all()
+        senders = {message.sender_id for message in messages}
+        chat_list = []
+        for sender_id in senders:
+            sender = session.query(User).filter(User.user_id == sender_id).first()
+            last_message = get_last_message(user_id, sender_id)
+            if last_message:
+                chat_list.append({
+                    "contact": sender,
+                    "last_message": last_message.content,
+                    "timestamp": last_message.timestamp.strftime("%I:%M %p")
+                })
+        return chat_list
+
+    # Get the current user's chat list
+    user_id = page.user_id
+    chat_list = get_chat_list(user_id)
+
+    # Chats container
+    chats_container = ft.ListView(
+        controls=[
+            ft.Container(
+                content=ft.Row(
+                    controls=[
+                        ft.CircleAvatar(
+                            foreground_image_url=chat["contact"].profile_picture_url,
+                            radius=30,
+                        ),
+                        ft.Column(
+                            controls=[
+                                ft.Text(chat["contact"].user_name, size=16, weight=ft.FontWeight.BOLD),
+                                ft.Text(chat["last_message"], size=12, color=ft.Colors.GREY),
+                            ],
+                            alignment=ft.MainAxisAlignment.START,
+                            spacing=5,
+                            expand=True,
+                        ),
+                        ft.Column(
+                            controls=[
+                                ft.Text(chat["timestamp"], size=12, color=ft.Colors.GREY, text_align=ft.TextAlign.END),
+                            ],
+                            alignment=ft.MainAxisAlignment.END,
+                            horizontal_alignment=ft.CrossAxisAlignment.END,
+                            spacing=5,
+                        ),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    spacing=10,
+                ),
+                padding=ft.padding.all(10),
+                margin=ft.margin.symmetric(vertical=5),
+                border_radius=ft.border_radius.all(10),
+                bgcolor=ft.Colors.with_opacity(1, "#f2f2f2"),
+                on_click=lambda e, contact=chat["contact"]: page.go(f"/chat/{contact.user_name}?avatar={contact.profile_picture_url}"),
+            ) for chat in chat_list
+        ],
         expand=True,
-        controls=[]
-    )
-    inventory_container = ft.Column(
-        expand=True,
-        controls=[]
+        padding=ft.padding.all(10),
     )
 
-    # Finances tab content
-    amount_input = ft.TextField(label="Amount:", expand=True, bgcolor="#001F67")
-    description_input = ft.TextField(label="Description:", expand=True, bgcolor="#001F67")
-    category_dropdown = ft.Dropdown(
-        label="Category:",
-        bgcolor="#001F67",
-        options=[
-            ft.dropdown.Option("Rent"),
-            ft.dropdown.Option("Transport"),
-            ft.dropdown.Option("Food"),
-            ft.dropdown.Option("Leisure"),
-            ft.dropdown.Option("Other"),
-        ],
-    )
-    type_dropdown = ft.Dropdown(
-        label="Type:",
-        bgcolor="#001F67",
-        options=[
-            ft.dropdown.Option("Expenses"),
-            ft.dropdown.Option("Income"),
-            ft.dropdown.Option("Savings"),
-        ],
-    )
-    transaction_table = ft.DataTable(
-        columns=[
-            ft.DataColumn(ft.Text("Date")),
-            ft.DataColumn(ft.Text("Category")),
-            ft.DataColumn(ft.Text("Amount")),
-            ft.DataColumn(ft.Text("Type")),
-            ft.DataColumn(ft.Text("Description")),
-        ],
-        rows=[],
-        expand=True,
-        bgcolor="#001F67",
-        gradient=ft.LinearGradient(
-                    begin=ft.alignment.top_center,
-                    end=ft.alignment.bottom_center,
-                    colors=["#001F67","#000E2F"]),
+    # Floating action button to open people page
+    floating_button = ft.FloatingActionButton(
+        icon=ft.icons.PEOPLE,
+        right=10,
+        bottom=10,
+        bgcolor=ft.Colors.with_opacity(1, "#009c74"),
+        on_click=lambda _: page.go('/people'),
     )
 
-    def add_transaction(e):
-        if amount_input.value.isdigit() and category_dropdown.value and type_dropdown.value:
-            date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            transaction_table.rows.append(
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text(date)),
-                        ft.DataCell(ft.Text(category_dropdown.value)),
-                        ft.DataCell(ft.Text(amount_input.value)),
-                        ft.DataCell(ft.Text(type_dropdown.value)),
-                        ft.DataCell(ft.Text(description_input.value)),
-                    ]
-                )
-            )
-            amount_input.value = ""
-            description_input.value = ""
-            category_dropdown.value = None
-            type_dropdown.value = None
-            page.update()
-
-    add_button = ft.ElevatedButton("Add", color="#FFFFFF", on_click=add_transaction, bgcolor="#001F67")
-
-    finances_container.controls.extend([
-        ft.Text("New Transaction", size=18, weight=ft.FontWeight.BOLD),
-        ft.Row([amount_input, category_dropdown], spacing=10),
-        ft.Row([type_dropdown, description_input], spacing=10),
-        add_button,
-        ft.Divider(height=1, color="#D3D3D3"),
-        ft.Text("Transactions", size=18, weight=ft.FontWeight.BOLD),
-        transaction_table,
-    
-    ])
-
-    # Inventory tab content
-    inventory_table = ft.DataTable(
-        columns=[
-            ft.DataColumn(ft.Text("Item")),
-            ft.DataColumn(ft.Text("Quantity")),
-            ft.DataColumn(ft.Text("Category")),
-            ft.DataColumn(ft.Text("Price")),
-        ],
-        rows=[],
-        expand=True,
-        bgcolor="#001F67"
-    )
-
-    item_input = ft.TextField(label="Item Name", expand=True, bgcolor="#001F67")
-    quantity_input = ft.TextField(label="Quantity", expand=True, bgcolor="#001F67")
-    inventory_category_dropdown = ft.Dropdown(
-        label="Category",
-        bgcolor="#001F67",
-        options=[
-            ft.dropdown.Option("Electronics"),
-            ft.dropdown.Option("Groceries"),
-            ft.dropdown.Option("Clothing"),
-            ft.dropdown.Option("Furniture"),
-            ft.dropdown.Option("Other"),
-        ],
-    )
-    price_input = ft.TextField(label="Price", expand=True, bgcolor="#001F67")
-
-    def add_inventory_item(e):
-        if quantity_input.value.isdigit() and price_input.value.isdigit() and inventory_category_dropdown.value:
-            inventory_table.rows.append(
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text(item_input.value)),
-                        ft.DataCell(ft.Text(quantity_input.value)),
-                        ft.DataCell(ft.Text(inventory_category_dropdown.value)),
-                        ft.DataCell(ft.Text(price_input.value)),
-                    ]
-                )
-            )
-            item_input.value = ""
-            quantity_input.value = ""
-            inventory_category_dropdown.value = None
-            price_input.value = ""
-            page.update()
-
-    add_inventory_button = ft.ElevatedButton("Add Item", color="#FFFFFF", on_click=add_inventory_item, bgcolor="#001F67")
-
-    inventory_container.controls.extend([
-        ft.Text("Add Inventory Item", size=18, weight=ft.FontWeight.BOLD),
-        ft.Row([item_input, quantity_input], spacing=10),
-        ft.Row([inventory_category_dropdown, price_input], spacing=10),
-        add_inventory_button,
-        ft.Divider(height=1, color="#D3D3D3"),
-        ft.Text("Inventory List", size=18, weight=ft.FontWeight.BOLD),
-        inventory_table,
-        
-    ])
-
-    # Tabs
-    def tab_change(e):
-        if tabs.selected_index == 0:
-            tab_content.controls = finances_container.controls
-        elif tabs.selected_index == 1:
-            tab_content.controls = inventory_container.controls
-        page.update()
-
-    tabs = ft.Tabs(
-        selected_index=0,
-        tabs=[
-            ft.Tab(text="Finances"),
-            ft.Tab(text="Inventory"),
-        ],
-        on_change=tab_change,
-        expand=False,
-    )
-
-    tab_content = ft.Column(finances_container.controls, expand=True)
-
-    
-    return ft.Container (
-        content = ft.Column(
+    return ft.Container(
+        content=ft.Stack(
             [
-                header,
-                ft.Divider(height=1, color="#D3D3D3"),
-                tabs,
-                tab_content,
+                ft.Column(
+                    controls=[
+                        header,
+                        ft.Divider(height=1, color=ft.Colors.GREY),
+                        chats_container,
+                    ],
+                    expand=True,
+                ),
+                floating_button,
             ],
             expand=True,
-            scroll='auto',
+            alignment=ft.alignment.bottom_right,
         ),
-        padding=ft.padding.symmetric(horizontal=8)
+        expand=True,
     )

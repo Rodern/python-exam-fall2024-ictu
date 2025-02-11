@@ -1,56 +1,55 @@
 import flet as ft
 from flet import *
-from db.inventoryplusdb import *
+from db.crud import get_user, session
 from helpers.datahelpers import *
 from hashlib import sha256
+import sys
+from pydantic import BaseModel
+sys.path.append('./db')
+from db.models import User, Message, Status, Group
 
-def login_user(username: str, password: str):
+def login_user(phone_number: str, password: str):
     try:
-        data_store = create_inventory_db()
         hashed_password = sha256(password.encode()).hexdigest()
-        user = data_store.read_record('user', f'username = "{username}"') #'userId = "1"')
+        user = session.query(User).filter(User.phone_number == phone_number).first()
         if user:
-            if hashed_password == user[2]:
+            if hashed_password == user.password:
                 return True, user
             else:
                 return False, "Wrong password"
         else:
-            return False, f"No user with username: {username}."
+            return False, f"No user with phone number: {phone_number}."
     except Exception as e:
-        return False, e
+        return False, str(e)
 
 def UserLogin(page: ft.Page):
-    global user_logged_in
-
     def signin_clicked(e):
-        global user_logged_in
-
         # Validate input fields
-        if not username_field.value or not password_field.value:
+        if not phone_number_field.value or not password_field.value:
             page.snack_bar = ft.SnackBar(
                 ft.Text("All fields are required!", color=ft.Colors.RED)
             )
             page.snack_bar.open = True
             page.update()
         else:
-            username = username_field.value.strip()
+            phone_number = phone_number_field.value.strip()
             password = password_field.value.strip()
 
-            success, result = login_user(username, password)
+            success, result = login_user(phone_number, password)
             if success:
                 page.snack_bar = ft.SnackBar(
-                    ft.Text("Login successfull!", color=ft.Colors.BLUE)
+                    ft.Text("Login successful!", color=ft.Colors.BLUE)
                 )
                 page.snack_bar.open = True
                 page.update()
 
-                username_field.value = ""
+                phone_number_field.value = ""
                 password_field.value = ""
 
-                page.user_id = result[0]
+                page.user_id = result.user_id
                 page.user_logged_in = True
-                
-                SaveSignin(result[0])
+
+                SaveSignin(result.user_id)
 
                 page.update()
                 page.go('/home')
@@ -61,10 +60,9 @@ def UserLogin(page: ft.Page):
                 page.snack_bar.open = True
                 page.update()
 
-
-    username_field = ft.TextField(label="Username", width=610, color=ft.Colors.with_opacity(1, "#1f1f1f"), bgcolor=ft.Colors.WHITE, border_radius=5, border=ft.InputBorder.OUTLINE)
+    phone_number_field = ft.TextField(label="Phone number", width=610, color=ft.Colors.with_opacity(1, "#1f1f1f"), bgcolor=ft.Colors.WHITE, border_radius=5, border=ft.InputBorder.OUTLINE)
     password_field = ft.TextField(label="Password", password=True, can_reveal_password=True, width=610, color=ft.Colors.with_opacity(1, "#1f1f1f"), bgcolor=ft.Colors.WHITE, border_radius=5, border=ft.InputBorder.OUTLINE)
-    signin_button = ft.ElevatedButton(text="Signin", on_click=lambda e: signin_clicked(e), height=36, width=200, bgcolor=ft.Colors.with_opacity(1, "#0078D4"), color=ft.Colors.WHITE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)))
+    signin_button = ft.ElevatedButton(text="Signin", on_click=lambda e: signin_clicked(e), height=36, width=200, bgcolor=ft.Colors.with_opacity(1, "#009c74"), color=ft.Colors.WHITE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)))
     signup = ft.TextButton(text="Create account", on_click=lambda _: page.go('/registration'))
 
     return ft.Container(
@@ -75,7 +73,7 @@ def UserLogin(page: ft.Page):
                     alignment=ft.MainAxisAlignment.START,
                     width=610,
                 ),
-                username_field,
+                phone_number_field,
                 password_field,
                 ft.Row(
                     [signin_button],
@@ -99,5 +97,4 @@ def UserLogin(page: ft.Page):
         ),
         bgcolor=ft.Colors.GREY_200,
         padding=ft.padding.all(20),
-        border_radius=10,
     )
